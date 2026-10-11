@@ -1,28 +1,29 @@
 # Moroccan Used Car Price Predictor
 
-A machine learning project that estimates the market price of a used car in Morocco from its listing details. The long-term goal is to tell a buyer whether a listed price looks underpriced, fair, or overpriced.
+A machine learning project that estimates the market price of a used car in Morocco from its listing details, then tells you whether the seller's price is **underpriced, fair, or overpriced**. It runs from the terminal.
 
-> **Status: work in progress.** Data cleaning, feature preparation, and model training are done. Evaluation, model comparison, and the terminal tool are still under revision.
+```
+Predicted market price :       85,627 MAD
+Estimated fair range   :       70,252 - 101,940 MAD
+Seller price           :       85,000 MAD
+----------------------------------------------------
+Result: FAIR - in line with similar listings.
+```
 
 ## Dataset
 
-[Moroccan Used Cars Dataset (MUCars, 2024)](https://data.mendeley.com/), with 101,896 listings and 15 columns. After removing rows with a missing price or key features, about 72,366 listings remain. The dataset isn't included in this repo, but it is in `data/README.md`.
+[Moroccan Used Cars Dataset (MUCars, 2024)](https://data.mendeley.com/): 101,896 listings with 15 columns. After cleaning, **72,366 listings** are used (see below). The dataset is not included in this repo; see `data/README.md`.
 
-Features currently used: `Year`, `Mileage`, `Fiscal Power`, `Brand`, `Model`, `Fuel`, `Gearbox`, `Location`. The target is `Price` (MAD).
+## How it works
 
-## What's done
-
-- Loaded and explored the data (shape, types, missing values, summary statistics)
-- Dropped rows with a missing price, since price is the target
-- Converted `Year` and `Fiscal Power` ("8 CV") to numbers
-- Converted `Mileage` ranges (for example "200 000 - 249 999") to range midpoints
-- Standardized text columns (trimmed and title-cased brand, model, fuel, gearbox, location)
-- One-hot encoded categorical features
-- Handled price outliers and cleaned brand names
-- Trained a Random Forest Regressor on an 80/20 train/test split
-- Evaluated the model against MAE, RMSE and R²
-- Compared Linear Regression, Decision Tree, and Random Forest
-
+1. **Clean the data** (`src/preprocessing.py`, explained step by step in the notebook)
+   - Drop listings without a price (the target) and rows with unusable year, fiscal power, or mileage
+   - Convert mileage ranges such as "200 000 - 249 999" to their midpoint, and "8 CV" to 8
+   - Standardize text, translate Arabic city names, remove numeric-only brand ids and one corrupted fuel value
+   - Remove price outliers: values outside 10,000 to 1,500,000 MAD (placeholders and typing mistakes up to 1.6 billion) and repeated-digit prices such as 99999
+   - Remove duplicate listings; mark missing optional fields (condition, origin, first owner, doors) as "Unknown" instead of dropping rows
+2. **Train and compare three models** (`src/train.py`): Linear Regression, Decision Tree, and Random Forest. Categories are one-hot encoded inside a pipeline fitted on the training set only, and the price is modelled on a log scale.
+3. **Fair range**: the range covers the middle 80% of how far real prices were from the predictions on the test set. A seller price below it is underpriced, above it is overpriced.
 
 ## Results
 
@@ -36,11 +37,12 @@ Features currently used: `Year`, `Mileage`, `Fiscal Power`, `Brand`, `Model`, `F
 
 The Random Forest is used by the terminal tool. Its fair range is the predicted price x [0.82, 1.19].
 
+**Why the cleaning matters:** before removing price outliers, the same Random Forest had an MAE of about 800,000 MAD and a negative R², because a few listings were priced at up to 1.6 billion MAD.
 
 ## Run it
 
 ```bash
-git clone https://github.com/<shahd-0>/moroccan-used-car-price-predictor.git
+git clone https://github.com/<your-username>/moroccan-used-car-price-predictor.git
 cd moroccan-used-car-price-predictor
 pip install -r requirements.txt
 ```
@@ -50,7 +52,7 @@ pip install -r requirements.txt
 3. Check a listing:
 
 ```bash
-python src/predict.py          
+python src/predict.py          # asks you questions one by one
 ```
 
 or in one line:
@@ -60,7 +62,7 @@ python src/predict.py --brand Dacia --model Sandero --year 2015 --mileage 150000
     --fiscal-power 6 --fuel Diesel --gearbox Manual --location Casablanca --price 85000
 ```
 
-Brand, model, and city are matched case-insensitively, and typos get suggestions ("Did you mean: Dacia?"). Condition, origin, first owner, and doors are optional; press Enter to skip.
+Brand, model, and city are matched case-insensitively and typos get suggestions ("Did you mean: Dacia?"). Condition, origin, first owner, and doors are optional; press Enter to skip.
 
 The notebook `notebook/used_car_price_predictor.ipynb` walks through the same pipeline with outputs.
 
@@ -69,15 +71,16 @@ The notebook `notebook/used_car_price_predictor.ipynb` walks through the same pi
 ```
 moroccan-used-car-price-predictor/
 ├── data/
-│   └── README.md                 
+│   └── README.md                  # where to get the dataset
 ├── docs/
-│   └── results.md                
+│   └── results.md                 # metrics generated by train.py
 ├── notebook/
 │   └── used_car_price_predictor.ipynb
 ├── src/
-│   ├── preprocessing.py          
-│   ├── train.py                   
-│   └── predict.py                
+│   ├── preprocessing.py           # cleaning rules
+│   ├── train.py                   # compares models, saves the best one
+│   └── predict.py                 # terminal tool
+├── Project_Proposal.docx
 ├── requirements.txt
 └── README.md
 ```
@@ -96,9 +99,10 @@ moroccan-used-car-price-predictor/
 
 - Tune the Random Forest hyperparameters and try gradient boosting
 - Harmonize model names (for example "Megane_4" vs "Megane 4") and use the Equipment column
+- Per-segment fair ranges (a luxury car needs a wider range than a Dacia)
+- Automated tests for the cleaning rules
 - A small web interface
 
 ## Author
 
 Shahd Islam, Computer Science (AI and Machine Learning), Al Akhawayn University
-  
