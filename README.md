@@ -2,7 +2,7 @@
 
 A machine learning project that estimates the market price of a used car in Morocco from its listing details. The long-term goal is to tell a buyer whether a listed price looks underpriced, fair, or overpriced.
 
-> **Status: work in progress.** Data cleaning, feature preparation, and model training are done. Evaluation, model comparison, and the terminal tool are still incomplete (see the roadmap).
+> **Status: work in progress.** Data cleaning, feature preparation, and model training are done. Evaluation, model comparison, and the terminal tool are still under revision.
 
 ## Dataset
 
